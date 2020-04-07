@@ -35,14 +35,20 @@ class Airframe(object):
         query = "SELECT odb.AC_ACTUAL_FLIGHTS.AC AS AC, " \
                 "(to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM')) AS BLAH, " \
                 "SUM( ROUND( odb.AC_ACTUAL_FLIGHTS.FLIGHT_HOURS + " \
-                "( odb.AC_ACTUAL_FLIGHTS.FLIGHT_MINUTES / 60 ), 2 ) ) AS FLIGHT_HOURS, " \
+                "( odb.AC_ACTUAL_FLIGHTS.FLIGHT_MINUTES / 60 ), 5 ) ) AS FLIGHT_HOURS, " \
                 "SUM ( odb.AC_ACTUAL_FLIGHTS.CYCLES ) AS FLIGHT_CYCLES " \
                 "FROM odb.AC_ACTUAL_FLIGHTS " \
                 "WHERE ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE <= to_date('{}', 'YYYY-MM-DD HH24-MI-SS')) " \
                 "GROUP BY to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM'), AC " \
                 "ORDER BY AC".format(self.endDate)
 
-        df = pd.read_sql(query, self.trax)
+        query_historical = query.replace("AC_ACTUAL_FLIGHTS", "AC_ACTUAL_FLIGHTS_HD")
+        df_current = pd.read_sql(query, self.trax)
+        df_historical = pd.read_sql(query_historical, self.trax)
+
+        df = pd.concat([df_current, df_historical], axis=0)
+        df.drop_duplicates(inplace=True)
+
         df.rename(columns={'BLAH': 'YYYY-MM'}, inplace=True)
         return pd.pivot_table(df, index=['AC'], columns=['YYYY-MM'], fill_value=0, aggfunc=np.sum, margins=True)
 
@@ -80,7 +86,7 @@ class Engine(Airframe):
         :return: dataframe with ESN, AC and Date removed
         """
         query = "SELECT SN, PN, TRANSACTION_TYPE, AC, TRANSACTION_DATE, SCHEDULE_CATEGORY, POSITION, " \
-                "ROUND ( HOURS_INSTALLED + ( MINUTES_INSTALLED / 60 ), 2 ) AS TSI, " \
+                "ROUND ( HOURS_INSTALLED + ( MINUTES_INSTALLED / 60 ), 5 ) AS TSI, " \
                 "CYCLES_INSTALLED AS CSI, REMOVAL_REASON " \
                 "FROM odb.AC_PN_TRANSACTION_HISTORY " \
                 "WHERE ( TRANSACTION_DATE >= to_date('{}', 'YYYY-MM-DD HH24:MI:SS')) " \
@@ -132,7 +138,8 @@ class Engine(Airframe):
         self.pairs.rename(columns=self.column_names, inplace=True)
         self.pairs[['REMOVAL_DATE']] = self.pairs[['REMOVAL_DATE']].fillna(value=pd.Timestamp(self.endDate))
 
-        return self.pairs.sort_values(by=['ESN']).drop(['INSTALL', 'REMOVE', 'POSITION_y'], axis=1)
+        return self.pairs.sort_values(by=['ESN', 'INSTALL_DATE'], ascending=(True, True), ignore_index=True)\
+            .drop(['INSTALL', 'REMOVE', 'POSITION_y'], axis=1)
 
     def get_install_time_by_yyyy_mm(self, startdate, enddate, ac):
         """
@@ -144,16 +151,22 @@ class Engine(Airframe):
         """
         query = "SELECT (to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM')) AS BLAH, " \
                 "SUM( ROUND( odb.AC_ACTUAL_FLIGHTS.FLIGHT_HOURS + " \
-                "( odb.AC_ACTUAL_FLIGHTS.FLIGHT_MINUTES / 60 ), 2 ) ) AS FLIGHT_HOURS, " \
+                "( odb.AC_ACTUAL_FLIGHTS.FLIGHT_MINUTES / 60 ), 5 ) ) AS FLIGHT_HOURS, " \
                 "SUM ( odb.AC_ACTUAL_FLIGHTS.CYCLES ) AS FLIGHT_CYCLES " \
                 "FROM odb.AC_ACTUAL_FLIGHTS " \
-                "WHERE ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE >= to_date('{}', 'YYYY-MM-DD HH24:MI:SS'))" \
+                "WHERE ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE >= to_date('{}', 'YYYY-MM-DD HH24:MI:SS')) " \
                 "AND ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE <= to_date('{}', 'YYYY-MM-DD HH24:MI:SS')) " \
                 "AND ( odb.AC_ACTUAL_FLIGHTS.AC = '{}' ) " \
                 "GROUP BY to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM') " \
                 "ORDER BY BLAH".format(startdate, enddate, ac)
 
-        df = pd.read_sql(query, self.trax)
+        query_historical = query.replace("AC_ACTUAL_FLIGHTS", "AC_ACTUAL_FLIGHTS_HD")
+        df_current = pd.read_sql(query, self.trax)
+        df_historical = pd.read_sql(query_historical, self.trax)
+
+        df = pd.concat([df_current, df_historical], axis=0)
+        df.drop_duplicates(inplace=True)
+
         df.rename(columns={'BLAH': 'YYYY-MM'}, inplace=True)
 
         return df
@@ -215,8 +228,8 @@ def select_dates():
 
 
 if __name__ == "__main__":
-    start, end = select_dates()
-    # start, end = '2020-03-01 00:00:00', '2020-03-31 23:59:59'
+    # start, end = select_dates()
+    start, end = '2020-03-01 00:00:00', '2020-03-31 23:59:59'
     airframe = Airframe(start, end).run()
     engines = Engine(start, end).run()
     removals = Engine(start, end).get_removals()
