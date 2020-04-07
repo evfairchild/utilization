@@ -42,13 +42,14 @@ class Airframe(object):
                 "GROUP BY to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM'), AC " \
                 "ORDER BY AC".format(self.endDate)
 
-        query_historical = query.replace("AC_ACTUAL_FLIGHTS", "AC_ACTUAL_FLIGHTS_HD")
-        df_current = pd.read_sql(query, self.trax)
-        df_historical = pd.read_sql(query_historical, self.trax)
+        # query_historical = query.replace("AC_ACTUAL_FLIGHTS", "AC_ACTUAL_FLIGHTS_HD")
+        # df_current = pd.read_sql(query, self.trax)
+        # df_historical = pd.read_sql(query_historical, self.trax)
+        #
+        # df = pd.concat([df_current, df_historical], axis=0)
+        # df.drop_duplicates(inplace=True)
 
-        df = pd.concat([df_current, df_historical], axis=0)
-        df.drop_duplicates(inplace=True)
-
+        df = pd.read_sql(query, self.trax)
         df.rename(columns={'BLAH': 'YYYY-MM'}, inplace=True)
         return pd.pivot_table(df, index=['AC'], columns=['YYYY-MM'], fill_value=0, aggfunc=np.sum, margins=True)
 
@@ -160,15 +161,14 @@ class Engine(Airframe):
                 "GROUP BY to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM') " \
                 "ORDER BY BLAH".format(startdate, enddate, ac)
 
-        query_historical = query.replace("AC_ACTUAL_FLIGHTS", "AC_ACTUAL_FLIGHTS_HD")
-        df_current = pd.read_sql(query, self.trax)
-        df_historical = pd.read_sql(query_historical, self.trax)
-
-        df = pd.concat([df_current, df_historical], axis=0)
-        df.drop_duplicates(inplace=True)
+        df = pd.read_sql(query, self.trax)
+        if df.empty:
+            query = query.replace("AC_ACTUAL_FLIGHTS", "AC_ACTUAL_FLIGHTS_HD")
+            df = pd.read_sql(query, self.trax)
+        else:
+            pass
 
         df.rename(columns={'BLAH': 'YYYY-MM'}, inplace=True)
-
         return df
 
     def run(self):
