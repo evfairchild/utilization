@@ -172,16 +172,22 @@ class Engine(Airframe):
         return df
 
     def run(self):
+        print("Collecting Engine Data...")
+        pairs = self._get_install_removal_pairs()
+
+        return self._build_dataframe(pairs)
+
+    def _build_dataframe(self, pairs):
         """
         Needs revision.  This method calls on 'get_install_time_by_yyyy_mm()' for each install-removal pair and merges
         unique records based on ESN. This is time-consuming (~50s) and should be written as an array function (df.apply)
         :return: dataframe with flight hours and cycles for each ESN in the fleet's history, filtered to YYYY-MM with totals
         """
         print("Collecting Engine Data...")
-        pairs = self._get_install_removal_pairs()
-        df_result = pd.DataFrame(columns=['ESN', 'INSTALLED_AC', 'YYYY-MM', 'FLIGHT_HOURS', 'FLIGHT_CYCLES'])
         pbar = tqdm(total=len(pairs))
         pbar.bar_format = "{l_bar}%s{bar}%s{r_bar}" % (Fore.GREEN, Fore.RESET)
+
+        df_result = pd.DataFrame(columns=['ESN', 'INSTALLED_AC', 'YYYY-MM', 'FLIGHT_HOURS', 'FLIGHT_CYCLES'])
 
         for i, esn in pairs.iterrows():
             df_tmp = self.get_install_time_by_yyyy_mm(esn['INSTALL_DATE'], esn['REMOVAL_DATE'], esn['AC'])
