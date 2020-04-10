@@ -38,7 +38,9 @@ class Airframe(object):
                 "( odb.AC_ACTUAL_FLIGHTS.FLIGHT_MINUTES / 60 ), 5 ) ) AS FLIGHT_HOURS, " \
                 "SUM ( odb.AC_ACTUAL_FLIGHTS.CYCLES ) AS FLIGHT_CYCLES " \
                 "FROM odb.AC_ACTUAL_FLIGHTS " \
-                "WHERE ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE <= to_date('{}', 'YYYY-MM-DD HH24-MI-SS')) " \
+                "WHERE ( ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE + " \
+                    "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_HOUR, 0) / 24 ) + " \
+                    "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_MINUTE, 0) / 1440 )) <= to_date('{}', 'YYYY-MM-DD HH24-MI-SS')) " \
                 "GROUP BY to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM'), AC " \
                 "ORDER BY AC".format(self.endDate)
 
@@ -155,8 +157,12 @@ class Engine(Airframe):
                 "( odb.AC_ACTUAL_FLIGHTS.FLIGHT_MINUTES / 60 ), 5 ) ) AS FLIGHT_HOURS, " \
                 "SUM ( odb.AC_ACTUAL_FLIGHTS.CYCLES ) AS FLIGHT_CYCLES " \
                 "FROM odb.AC_ACTUAL_FLIGHTS " \
-                "WHERE ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE >= to_date('{}', 'YYYY-MM-DD HH24:MI:SS')) " \
-                "AND ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE <= to_date('{}', 'YYYY-MM-DD HH24:MI:SS')) " \
+                "WHERE ( ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE + " \
+                    "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_HOUR, 0) / 24 ) + " \
+                    "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_MINUTE, 0) / 1440 )) >= to_date('{}', 'YYYY-MM-DD HH24:MI:SS')) " \
+                "AND ( ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE + " \
+                    "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_HOUR, 0) / 24 ) + " \
+                    "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_MINUTE, 0) / 1440 )) <= to_date('{}', 'YYYY-MM-DD HH24:MI:SS')) " \
                 "AND ( odb.AC_ACTUAL_FLIGHTS.AC = '{}' ) " \
                 "GROUP BY to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM') " \
                 "ORDER BY BLAH".format(startdate, enddate, ac)
@@ -224,6 +230,22 @@ class Engine(Airframe):
         esn_history = pd.DataFrame(index=esns.index, columns=cols).fillna(0)
         esn_history.apply(lambda row: pd.Series(self.get_install_time_by_yyyy_mm(row[2], row[4], row[1])), axis=1)
 
+    def get_tsi_csi(self, startdate, enddate, ac):
+        query = "SELECT SUM ( " \
+            "ROUND( odb.AC_ACTUAL_FLIGHTS.FLIGHT_HOURS + (odb.AC_ACTUAL_FLIGHTS.FLIGHT_MINUTES / 60), 2)) AS TSI, " \
+            "COUNT( odb.AC_ACTUAL_FLIGHTS.CYCLES ) AS CSI " \
+            "FROM odb.AC_ACTUAL_FLIGHTS " \
+            "WHERE ( ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE + " \
+                "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_HOUR, 0) / 24 ) + " \
+                "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_MINUTE, 0) / 1440 )) >= to_date('{}', 'YYYY-MM-DD HH24:MI:SS')) " \
+            "AND ( ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE + " \
+                "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_HOUR, 0) / 24 ) + " \
+                "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_MINUTE, 0) / 1440 )) < to_date('{}', 'YYYY-MM-DD HH24:MI:SS')) " \
+            "AND ( odb.AC_ACTUAL_FLIGHTS.AC = '{}' ) ".format(startdate, enddate, ac)
+
+        df = pd.read_sql(query, self.trax)
+        # print(pd.Series(df['TSI'][0], int(df['CSI'][0])))
+        return df['TSI'][0], int(df['CSI'][0])
 
 def select_dates():
     cal_result = Calendar2().run()
