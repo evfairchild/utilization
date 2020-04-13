@@ -19,7 +19,7 @@ class Airframe(object):
         self.tails = self.get_tails()
         self.now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    def _get_fh_fc_history(self):
+    def get_fh_fc_history(self):
         """
         This method returns a pivot table with the entire fleet history by YYY-MM.
         It requires TRAX access via ODBC.   Email evan.fairchild@alaskaair.com for help with access & setup.
@@ -98,7 +98,7 @@ class Airframe(object):
         pbar.bar_format = "{l_bar}%s{bar}%s{r_bar}" % (Fore.GREEN, Fore.RESET)
 
         pbar.update(33)
-        df = self._get_fh_fc_history()
+        df = self.get_fh_fc_history()
         pbar.update(33)
         df = self.filter_to_yyyy_mm(df)
         pbar.update(34)

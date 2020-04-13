@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="7e7fcdf8-2ade-48e7-8cf5-96e554c6f769" name="Default Changelist" comment="created Engine._build_dataframe and a new Engine.run method for improved read-ability">
-      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/efairchild.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/efairchild.xml" afterDir="false" />
+    <list default="true" id="7e7fcdf8-2ade-48e7-8cf5-96e554c6f769" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/reports/airframe.py" beforeDir="false" afterPath="$PROJECT_DIR$/reports/airframe.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reports/engine.py" beforeDir="false" afterPath="$PROJECT_DIR$/reports/engine.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/reports/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/reports/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_airframe.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_airframe.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -19,12 +17,13 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/reports/airframe.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="412">
-              <caret line="68" column="44" lean-forward="true" selection-start-line="68" selection-start-column="44" selection-end-line="68" selection-end-column="44" />
+            <state relative-caret-position="460">
+              <caret line="21" column="8" lean-forward="true" selection-start-line="21" selection-start-column="8" selection-end-line="21" selection-end-column="8" />
               <folding>
-                <element signature="e#74#93#0" expanded="true" />
-                <element signature="e#655#2057#0" />
+                <element signature="e#28#47#0" expanded="true" />
                 <element signature="e#2107#2518#0" />
+                <element signature="e#2507#2733#0" />
+                <element signature="e#2785#3865#0" />
                 <element signature="e#3188#3616#0" />
                 <element signature="e#4114#4451#0" />
               </folding>
@@ -35,10 +34,10 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/tests/test_airframe.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="330">
-              <caret line="18" column="63" lean-forward="true" selection-start-line="18" selection-start-column="63" selection-end-line="18" selection-end-column="63" />
+            <state relative-caret-position="242">
+              <caret line="12" column="43" selection-start-line="12" selection-start-column="43" selection-end-line="12" selection-end-column="43" />
               <folding>
-                <element signature="e#28#43#0" expanded="true" />
+                <element signature="e#0#6#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -47,8 +46,12 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/reports/engine.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="88">
-              <caret line="4" column="13" selection-start-line="4" selection-start-column="13" selection-end-line="4" selection-end-column="13" />
+            <state relative-caret-position="308">
+              <caret line="14" lean-forward="true" selection-start-line="14" selection-end-line="14" />
+              <folding>
+                <element signature="e#74#111#0" expanded="true" />
+                <element signature="e#718#1499#0" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -97,8 +100,8 @@
         <option value="$USER_HOME$/util/Lib/site-packages/customGUI.py" />
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/reports.py" />
-        <option value="$PROJECT_DIR$/reports/engine.py" />
         <option value="$PROJECT_DIR$/reports/main.py" />
+        <option value="$PROJECT_DIR$/reports/engine.py" />
         <option value="$PROJECT_DIR$/reports/airframe.py" />
         <option value="$PROJECT_DIR$/tests/test_airframe.py" />
       </list>
@@ -310,22 +313,17 @@
       <option name="project" value="LOCAL" />
       <updated>1586536191703</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="add unittests directory for Airframe class and get_fh_fc method">
+      <created>1586814872098</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1586814872098</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="pytest_in_test_airframe_py - 2020.04.13 at 14h 10m 36s.xml">
-      <configuration name="pytest in test_airframe.py" configurationId="tests" />
-    </history-entry>
-    <history-entry file="pytest_in_test_airframe_py - 2020.04.13 at 14h 12m 47s.xml">
-      <configuration name="pytest in test_airframe.py" configurationId="tests" />
-    </history-entry>
-    <history-entry file="pytest_in_test_airframe_py - 2020.04.13 at 14h 13m 50s.xml">
-      <configuration name="pytest in test_airframe.py" configurationId="tests" />
-    </history-entry>
-    <history-entry file="pytest_in_test_airframe_py - 2020.04.13 at 14h 16m 36s.xml">
-      <configuration name="pytest in test_airframe.py" configurationId="tests" />
-    </history-entry>
     <history-entry file="pytest_in_test_airframe_py - 2020.04.13 at 14h 19m 42s.xml">
       <configuration name="pytest in test_airframe.py" configurationId="tests" />
     </history-entry>
@@ -342,6 +340,18 @@
       <configuration name="pytest in test_airframe.py" configurationId="tests" />
     </history-entry>
     <history-entry file="pytest_in_test_airframe_py - 2020.04.13 at 14h 37m 41s.xml">
+      <configuration name="pytest in test_airframe.py" configurationId="tests" />
+    </history-entry>
+    <history-entry file="pytest_in_test_airframe_py - 2020.04.13 at 15h 21m 29s.xml">
+      <configuration name="pytest in test_airframe.py" configurationId="tests" />
+    </history-entry>
+    <history-entry file="pytest_in_test_airframe_py - 2020.04.13 at 15h 23m 56s.xml">
+      <configuration name="pytest in test_airframe.py" configurationId="tests" />
+    </history-entry>
+    <history-entry file="pytest_in_test_airframe_py - 2020.04.13 at 15h 35m 36s.xml">
+      <configuration name="pytest in test_airframe.py" configurationId="tests" />
+    </history-entry>
+    <history-entry file="pytest_in_test_airframe_py - 2020.04.13 at 15h 42m 37s.xml">
       <configuration name="pytest in test_airframe.py" configurationId="tests" />
     </history-entry>
   </component>
@@ -361,15 +371,16 @@
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.17062864" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Messages" weight="0.3295838" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49973586" weight="0.3633296" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49973586" visible="true" weight="0.3633296" />
       <window_info anchor="bottom" x="1929" y="36" width="1904" height="1035" id="Debug" order="3" type="WINDOWED" weight="0.34758157" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.3295838" />
-      <window_info anchor="bottom" id="Version Control" order="7" weight="0.2767154" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="8" visible="true" weight="0.28908888" />
+      <window_info anchor="bottom" id="Version Control" order="7" weight="0.2857143" />
+      <window_info anchor="bottom" id="Terminal" order="8" weight="0.28908888" />
       <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.5002641" side_tool="true" weight="0.24971879" />
       <window_info anchor="bottom" x="1933" y="392" width="1893" height="293" id="Python Console" maximized="true" order="10" weight="0.33408323" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
@@ -423,7 +434,8 @@
     <MESSAGE value="Fixed bug related to engine history and lease returned aircraft.  No more large discrepancies exist between this report and previous utilization history." />
     <MESSAGE value="created Engine._build_dataframe and a new Engine.run method for improved read-ability" />
     <MESSAGE value="ammend .gitignore with .idea file" />
-    <option name="LAST_COMMIT_MESSAGE" value="ammend .gitignore with .idea file" />
+    <MESSAGE value="add unittests directory for Airframe class and get_fh_fc method" />
+    <option name="LAST_COMMIT_MESSAGE" value="add unittests directory for Airframe class and get_fh_fc method" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$USER_HOME$/util/Lib/site-packages/ttkcalendar.py">
@@ -531,33 +543,38 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/reports/engine.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="88">
-          <caret line="4" column="13" selection-start-line="4" selection-start-column="13" selection-end-line="4" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/reports/airframe.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="412">
-          <caret line="68" column="44" lean-forward="true" selection-start-line="68" selection-start-column="44" selection-end-line="68" selection-end-column="44" />
+        <state relative-caret-position="460">
+          <caret line="21" column="8" lean-forward="true" selection-start-line="21" selection-start-column="8" selection-end-line="21" selection-end-column="8" />
           <folding>
-            <element signature="e#74#93#0" expanded="true" />
-            <element signature="e#655#2057#0" />
+            <element signature="e#28#47#0" expanded="true" />
             <element signature="e#2107#2518#0" />
+            <element signature="e#2507#2733#0" />
+            <element signature="e#2785#3865#0" />
             <element signature="e#3188#3616#0" />
             <element signature="e#4114#4451#0" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/reports/engine.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="308">
+          <caret line="14" lean-forward="true" selection-start-line="14" selection-end-line="14" />
+          <folding>
+            <element signature="e#74#111#0" expanded="true" />
+            <element signature="e#718#1499#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/tests/test_airframe.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="330">
-          <caret line="18" column="63" lean-forward="true" selection-start-line="18" selection-start-column="63" selection-end-line="18" selection-end-column="63" />
+        <state relative-caret-position="242">
+          <caret line="12" column="43" selection-start-line="12" selection-start-column="43" selection-end-line="12" selection-end-column="43" />
           <folding>
-            <element signature="e#28#43#0" expanded="true" />
+            <element signature="e#0#6#0" expanded="true" />
           </folding>
         </state>
       </provider>
