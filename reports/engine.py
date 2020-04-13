@@ -1,94 +1,30 @@
 __author__ = "Evan Fairchild"
 __email__ = "evan.fairchild@alaskaair.com"
 
-# try:
+from reports.airframe import Airframe
 import pandas as pd
-import numpy as np
 import pyodbc
-from customGUI import Calendar2
-import os
 from tqdm import tqdm
 from colorama import Fore
-# except ImportError:
-#     from pip._internal import main as pip
-#     print("Import failed: Now installing necessary requirements")
-#     pip(['install', '-r', 'requirements.txt'])
-
-
-class Airframe(object):
-    def __init__(self, start_date, end_date):
-        self.startDate = start_date
-        self.endDate = end_date
-        self.year = start_date[0:4]
-        self.month = start_date[5:7]
-        self.yyyymm = self.year + "-" + self.month
-        self.trax = pyodbc.connect('DSN=Trax Reporting;pwd=WelcomeToTrax#1')
-
-    def _get_fh_fc_history(self):
-        """
-        This method returns a pivot table with the entire fleet history by YYY-MM.
-        It requires TRAX access via ODBC.   Email evan.fairchild@alaskaair.com for help with access & setup.
-        SUPER FAST and easy!
-
-        :return: pivot table indexed by AC registration and grouped by YYY-MM.  Included aggregate row and column.
-        """
-        query = "SELECT odb.AC_ACTUAL_FLIGHTS.AC AS AC, " \
-                "(to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM')) AS BLAH, " \
-                "SUM( ROUND( odb.AC_ACTUAL_FLIGHTS.FLIGHT_HOURS + " \
-                "( odb.AC_ACTUAL_FLIGHTS.FLIGHT_MINUTES / 60 ), 5 ) ) AS FLIGHT_HOURS, " \
-                "SUM ( odb.AC_ACTUAL_FLIGHTS.CYCLES ) AS FLIGHT_CYCLES " \
-                "FROM odb.AC_ACTUAL_FLIGHTS " \
-                "WHERE ( ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE + " \
-                    "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_HOUR, 0) / 24 ) + " \
-                    "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_MINUTE, 0) / 1440 )) <= to_date('{}', 'YYYY-MM-DD HH24-MI-SS')) " \
-                "GROUP BY to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM'), AC " \
-                "ORDER BY AC".format(self.endDate)
-
-        # query_historical = query.replace("AC_ACTUAL_FLIGHTS", "AC_ACTUAL_FLIGHTS_HD")
-        # df_current = pd.read_sql(query, self.trax)
-        # df_historical = pd.read_sql(query_historical, self.trax)
-        #
-        # df = pd.concat([df_current, df_historical], axis=0)
-        # df.drop_duplicates(inplace=True)
-
-        df = pd.read_sql(query, self.trax)
-        df.rename(columns={'BLAH': 'YYYY-MM'}, inplace=True)
-        return pd.pivot_table(df, index=['AC'], columns=['YYYY-MM'], fill_value=0, aggfunc=np.sum, margins=True)
-
-    def filter_to_yyyy_mm(self, pivot):
-        """
-        Filter a pivot table to the requested Month (YYYY-MM)
-        :param pivot: pivot table with columns YYYY-MM
-        :return: dataframe with requested YYYY-MM and aggregate totals for flight hours and flight cycles
-        """
-        return pivot.filter([('FLIGHT_HOURS', self.yyyymm), ('FLIGHT_HOURS', 'All'),
-                             ('FLIGHT_CYCLES', self.yyyymm), ('FLIGHT_CYCLES', 'All')])
-
-    def run(self):
-        print("Collecting Airframe Data...")
-        pbar = tqdm(total=100)
-        pbar.bar_format = "{l_bar}%s{bar}%s{r_bar}" % (Fore.GREEN, Fore.RESET)
-
-        pbar.update(33)
-        df = self._get_fh_fc_history()
-        pbar.update(33)
-        df = self.filter_to_yyyy_mm(df)
-        pbar.update(34)
-        pbar.close()
-        return df
 
 
 class Engine(Airframe):
-    """
-    child class to Airframe parent class above.
-    """
+    def __init__(self, start_date, end_date):
+        super(Engine, self).__init__(start_date, end_date)
+        cols = self._get_fh_fc_history().columns
+        self.esn_history = pd.DataFrame(columns=cols)
+
     def get_removals(self):
         """
         This method queries the removal records for the month input by the user.
         PN query: 1887M10G% for the CFM56-5B and 2489M10G% for the LEAP-1A engines
         :return: dataframe with ESN, AC and Date removed
         """
-        query = "SELECT SN, PN, TRANSACTION_TYPE, AC, TRANSACTION_DATE, SCHEDULE_CATEGORY, POSITION, " \
+        query = "SELECT SN, PN, TRANSACTION_TYPE, AC, " \
+                "(TRUNC(TRANSACTION_DATE) + " \
+                    "( NVL( TRANSACTION_HOUR, 0) / 24 ) + " \
+                    "( NVL( TRANSACTION_MINUTE, 0) / 1440 )) AS TRANS_DATE, " \
+                "SCHEDULE_CATEGORY, POSITION, " \
                 "ROUND ( HOURS_INSTALLED + ( MINUTES_INSTALLED / 60 ), 5 ) AS TSI, " \
                 "CYCLES_INSTALLED AS CSI, REMOVAL_REASON " \
                 "FROM odb.AC_PN_TRANSACTION_HISTORY " \
@@ -105,11 +41,16 @@ class Engine(Airframe):
         hours and cycles by ESM can be tabulated.
         :return: dataframe containing install and removal pairs based on ESN and installed aircraft
         """
-        query = "SELECT SN, TRANSACTION_TYPE, AC, TRANSACTION_DATE, POSITION " \
+        query = "SELECT SN, TRANSACTION_TYPE, AC, " \
+                "(TRUNC(TRANSACTION_DATE) + " \
+                    "( NVL( TRANSACTION_HOUR, 0) / 24 ) + " \
+                    "( NVL( TRANSACTION_MINUTE, 0) / 1440 )) AS TRANSACTION_DATE, " \
+                "POSITION " \
                 "FROM odb.AC_PN_TRANSACTION_HISTORY " \
                 "WHERE ( PN LIKE '1887M10G%' OR PN LIKE '2489M10G%' ) " \
                 "AND ( TRANSACTION_TYPE LIKE '{}' ) " \
                 "ORDER BY TRANSACTION_DATE"
+
         self.installs = pd.read_sql(query.format('IN%'), self.trax)
         self.removals = pd.read_sql(query.format('REMOVE'), self.trax)
 
@@ -175,7 +116,7 @@ class Engine(Airframe):
             pass
 
         df.rename(columns={'BLAH': 'YYYY-MM'}, inplace=True)
-        return df
+        self.esn_history.update(df)
 
     def run(self):
         print("Collecting Engine Data...")
@@ -224,11 +165,15 @@ class Engine(Airframe):
         Under development.  Uses array formula (pd.apply) instead of for loop for each ESN.
         :return:
         """
-        cols = self._get_fh_fc_history().columns
-        esns = self._get_install_removal_pairs().set_index(['ESN', 'AC', 'INSTALL_DATE', 'POSITION', 'REMOVAL_DATE'])
+        esns = self._get_install_removal_pairs()
 
-        esn_history = pd.DataFrame(index=esns.index, columns=cols).fillna(0)
-        esn_history.apply(lambda row: pd.Series(self.get_install_time_by_yyyy_mm(row[2], row[4], row[1])), axis=1)
+        self.esn_history = pd.concat([esns, self.esn_history], axis=1).fillna(0)
+        # df2[['TSI', 'CSI']] = df2.apply(
+        #     lambda row: pd.Series(e.get_tsi_csi(str(row['INSTALL_DATE']), str(row['REMOVAL_DATE']), row['AC'])), axis=1)
+
+        self.esn_history.apply(lambda row: pd.Series(self.get_install_time_by_yyyy_mm(row[2], row[4], row[1])), axis=1)
+
+        return self.esn_history
 
     def get_tsi_csi(self, startdate, enddate, ac):
         query = "SELECT SUM ( " \
@@ -246,31 +191,3 @@ class Engine(Airframe):
         df = pd.read_sql(query, self.trax)
         # print(pd.Series(df['TSI'][0], int(df['CSI'][0])))
         return df['TSI'][0], int(df['CSI'][0])
-
-def select_dates():
-    cal_result = Calendar2().run()
-    start, end = [i.strftime("%Y-%m-%d") for i in cal_result]
-    start += ' 00:00:00'
-    end += ' 23:59:59'
-    return start, end
-
-
-if __name__ == "__main__":
-    # start, end = select_dates()
-    start, end = '2020-03-01 00:00:00', '2020-03-31 23:59:59'
-    airframe = Airframe(start, end).run()
-    engines = Engine(start, end).run()
-    removals = Engine(start, end).get_removals()
-
-    file = "utilization_{}.xlsx".format(Airframe(start, end).yyyymm)
-
-    with pd.ExcelWriter(file) as writer:
-        airframe.to_excel(writer, sheet_name="airframe")
-        engines.to_excel(writer, sheet_name="engines")
-        removals.to_excel(writer, sheet_name="removals")
-    file = os.path.join(os.getcwd(), file)
-    try:
-        os.system("start EXCEL.EXE {}".format(file))
-    except PermissionError:
-        os.system('taskkill /FI "WINDOWTITLE eq {} - Excel" /F'.format(file))
-        os.system("start EXCEL.EXE {}".format(file))
