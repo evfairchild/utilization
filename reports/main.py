@@ -1,5 +1,4 @@
-__author__ = "Evan Fairchild"
-__email__ = "evan.fairchild@alaskaair.com"
+__author__ = "evfairchild"
 
 import os
 from customGUI import Calendar2

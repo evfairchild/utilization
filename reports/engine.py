@@ -1,9 +1,8 @@
-__author__ = "Evan Fairchild"
-__email__ = "evan.fairchild@alaskaair.com"
+__author__ = "evfairchild"
 
 from reports.airframe import Airframe
 import pandas as pd
-import pyodbc
+import numpy as np
 from tqdm import tqdm
 from colorama import Fore
 

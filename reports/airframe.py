@@ -1,10 +1,11 @@
-__author__ = "Evan Fairchild"
-__email__ = "evan.fairchild@alaskaair.com"
+__author__ = "evfairchild"
 
 import pandas as pd
 import numpy as np
 import pyodbc
-import tqdm
+from datetime import datetime
+from tqdm import tqdm
+from colorama import Fore
 
 
 class Airframe(object):
@@ -16,6 +17,7 @@ class Airframe(object):
         self.yyyymm = self.year + "-" + self.month
         self.trax = pyodbc.connect('DSN=Trax Reporting;pwd=WelcomeToTrax#1')
         self.tails = self.get_tails()
+        self.now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def _get_fh_fc_history(self):
         """
@@ -52,34 +54,43 @@ class Airframe(object):
 
     def get_tails(self):
         query = "SELECT odb.AC_MASTER.AC FROM odb.AC_MASTER " \
-                "UNION " \
-                "SELECT odb.AC_MASTER_HD.AC FROM odb.AC_MASTER_HD"
+                # "UNION " \
+                # "SELECT odb.AC_MASTER_HD.AC FROM odb.AC_MASTER_HD"
+        return list(pd.read_sql(query, self.trax, index_col='AC').index)
 
-        return pd.read_sql(query, self.trax, index_col='AC')
-
-    def get_fh_fc(self, acs, date='now'):
+    def get_fh_fc(self, acs, asof='now'):
         acs = ([acs] if type(acs) != list else acs)
+
+        if asof == 'now':
+            asof = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        elif len(asof) <= 10:
+            asof += " 23:59:59"
+
         for ac in acs:
-            if ac.upper() not in self.tails.index:
-                raise LookupError("AC registration {} invalid.".format(ac))
+            if ac.upper() not in self.tails:
+                raise LookupError("AC registration {} invalid.".format(ac.upper()))
 
         query = "SELECT AC, SUM( ROUND( odb.AC_ACTUAL_FLIGHTS.FLIGHT_HOURS + " \
                 "( odb.AC_ACTUAL_FLIGHTS.FLIGHT_MINUTES / 60 ), 5 ) ) AS FLIGHT_HOURS, " \
                 "SUM ( odb.AC_ACTUAL_FLIGHTS.CYCLES ) AS FLIGHT_CYCLES " \
                 "FROM odb.AC_ACTUAL_FLIGHTS " \
                 "WHERE AC IN ({}) " \
-                "GROUP BY AC " \
-                "ORDER BY AC".format(','.join("'%s'" % ac.upper() for ac in acs))
+                "AND ( FLIGHT_DATE <= to_date('{}', 'YYYY-MM-DD HH24-MI-SS')) " \
+                "GROUP BY AC".format(','.join("'%s'" % ac.upper() for ac in acs), asof)
+
+        # query_hd = query.replace('AC_ACTUAL_FLIGHTS', 'AC_ACTUAL_FLIGHTS_HD')
+        #
+        # query += " UNION " + query_hd
 
         df = pd.read_sql(query, self.trax, index_col='AC')
 
         return df
 
-    def get_fh(self, ac, date='now'):
-        return self.get_fh_fc(ac, date=date)['FLIGHT_HOURS']
+    def get_fh(self, ac, asof='now'):
+        return self.get_fh_fc(ac, asof=asof)['FLIGHT_HOURS']
 
-    def get_fc(self, ac, date='now'):
-        return self.get_fh_fc(ac, date=date)['FLIGHT_CYCLES']
+    def get_fc(self, ac, asof='now'):
+        return self.get_fh_fc(ac, asof=asof)['FLIGHT_CYCLES']
 
     def run(self):
         print("Collecting Airframe Data...")
@@ -93,4 +104,3 @@ class Airframe(object):
         pbar.update(34)
         pbar.close()
         return df
-
