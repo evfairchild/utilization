@@ -1,8 +1,8 @@
 __author__ = "evfairchild"
 
 import os
-from customGUI import Calendar2
-from pandas import pd
+from pkg.customGUI import Calendar2
+import pandas as pd
 from reports.airframe import Airframe
 from reports.engine import Engine
 
@@ -16,10 +16,10 @@ def select_dates():
 
 
 if __name__ == "__main__":
-    # start, end = select_dates()
-    start_date, end_date = '2020-03-01 00:00:00', '2020-03-31 23:59:59'
+    start_date, end_date = select_dates()
+    # start_date, end_date = '2020-03-01 00:00:00', '2020-03-31 23:59:59'
     airframe = Airframe(start_date, end_date).run()
-    engines = Engine(start_date, end_date).run_apply()
+    engines = Engine(start_date, end_date).run()
     removals = Engine(start_date, end_date).get_removals()
 
     file = "utilization_{}.xlsx".format(Airframe(start_date, end_date).yyyymm)

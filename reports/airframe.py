@@ -9,15 +9,16 @@ from colorama import Fore
 
 
 class Airframe(object):
-    def __init__(self, start_date, end_date):
+    def __init__(self, start_date='2005-12-01 00:00:00', end_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S")):
         self.startDate = start_date
         self.endDate = end_date
         self.year = start_date[0:4]
         self.month = start_date[5:7]
         self.yyyymm = self.year + "-" + self.month
+        self.now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         self.trax = pyodbc.connect('DSN=Trax Reporting;pwd=WelcomeToTrax#1')
         self.tails = self.get_tails()
-        self.now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def get_fh_fc_history(self):
         """
@@ -104,3 +105,4 @@ class Airframe(object):
         pbar.update(34)
         pbar.close()
         return df
+

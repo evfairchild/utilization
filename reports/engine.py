@@ -10,7 +10,7 @@ from colorama import Fore
 class Engine(Airframe):
     def __init__(self, start_date, end_date):
         super(Engine, self).__init__(start_date, end_date)
-        cols = self._get_fh_fc_history().columns
+        cols = self.get_fh_fc_history().columns
         self.esn_history = pd.DataFrame(columns=cols)
 
     def get_removals(self):
@@ -116,6 +116,7 @@ class Engine(Airframe):
 
         df.rename(columns={'BLAH': 'YYYY-MM'}, inplace=True)
         self.esn_history.update(df)
+        return df
 
     def run(self):
         print("Collecting Engine Data...")
@@ -129,7 +130,6 @@ class Engine(Airframe):
         unique records based on ESN. This is time-consuming (~50s) and should be written as an array function (df.apply)
         :return: dataframe with flight hours and cycles for each ESN in the fleet's history, filtered to YYYY-MM with totals
         """
-        print("Collecting Engine Data...")
         pbar = tqdm(total=len(pairs))
         pbar.bar_format = "{l_bar}%s{bar}%s{r_bar}" % (Fore.GREEN, Fore.RESET)
 
