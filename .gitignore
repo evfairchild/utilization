@@ -1,3 +1,4 @@
 *.xlsx
 !spec/*.xlsx
 .idea/
+reports/secrets.py

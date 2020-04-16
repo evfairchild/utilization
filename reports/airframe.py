@@ -1,5 +1,7 @@
 __author__ = "evfairchild"
 
+from reports.secrets import *
+
 import pandas as pd
 import numpy as np
 import pyodbc
@@ -7,18 +9,21 @@ from datetime import datetime
 from tqdm import tqdm
 from colorama import Fore
 
+now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 
 class Airframe(object):
-    def __init__(self, start_date='2005-12-01 00:00:00', end_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S")):
+    def __init__(self, start_date='2005-12-01 00:00:00', end_date=now, fleet='all'):
         self.startDate = start_date
         self.endDate = end_date
         self.year = start_date[0:4]
         self.month = start_date[5:7]
         self.yyyymm = self.year + "-" + self.month
-        self.now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.now = now
 
-        self.trax = pyodbc.connect('DSN=Trax Reporting;pwd=WelcomeToTrax#1')
-        self.tails = self.get_tails()
+        self.trax = pyodbc.connect(red_trax_conn)
+        self.fleet = self.set_fleet(fleet)
+        self.tails = self.set_tails()
 
     def get_fh_fc_history(self):
         """
@@ -53,10 +58,19 @@ class Airframe(object):
         return pivot.filter([('FLIGHT_HOURS', self.yyyymm), ('FLIGHT_HOURS', 'All'),
                              ('FLIGHT_CYCLES', self.yyyymm), ('FLIGHT_CYCLES', 'All')])
 
-    def get_tails(self):
-        query = "SELECT odb.AC_MASTER.AC FROM odb.AC_MASTER " \
-                # "UNION " \
-                # "SELECT odb.AC_MASTER_HD.AC FROM odb.AC_MASTER_HD"
+    def set_fleet(self, fleet):
+        self.fleet = fleet
+        self.tails = self.set_tails()
+        return self.fleet
+
+    def set_tails(self):
+        query = "SELECT AC, AC_TYPE FROM odb.AC_MASTER" \
+
+        if self.fleet != 'all':
+            query += " WHERE AC_TYPE = '{}' ORDER BY AC".format(self.fleet)
+        else:
+            pass
+
         return list(pd.read_sql(query, self.trax, index_col='AC').index)
 
     def get_fh_fc(self, acs, asof='now'):
