@@ -143,10 +143,12 @@ class Engine(Airframe):
         esn_history = self.get_esn_history(pairs)
         pbar.update(75)
         df = self.filter_to_yyyy_mm(esn_history)
+        df.columns = ['%s%s' % (a, ' | %s' % b if b else '') for a, b in df.columns]
         pbar.update(10)
         df = df.merge(self.installed_ac(), on='ESN', how='outer')
         pbar.update(5)
-        return df
+
+        return df.sort_values(by='INSTALLED_AC')
 
     def get_tsi_csi(self, startdate, enddate, ac):
         query = "SELECT SUM ( " \
