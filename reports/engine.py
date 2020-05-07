@@ -84,95 +84,69 @@ class Engine(Airframe):
         return self.pairs.sort_values(by=['ESN', 'INSTALL_DATE'], ascending=(True, True), ignore_index=True)\
             .drop(['INSTALL', 'REMOVE', 'POSITION_y'], axis=1)
 
-    def get_install_time_by_yyyy_mm(self, startdate, enddate, ac):
+    def get_esn_history(self, df):
         """
         This method return a dataframe for a single aircraft over a specific datetime interval (start - end).
-        :param startdate: Install date of the ESN being queried from the run() method.  ex. 2020-01-01 00:00:00
-        :param enddate: Removal date of the ESN being queried from the run() method.  ex. 2020-01-31 23:59:95
-        :param ac: aircraft registration ex. NXXXVA
+        :param df: dataframe with ESN, INSTALL_DATE, REMOVAL_DATE and AC
         :return: dataframe indexed by ac with columns YYYY-MM
         """
-        query = "SELECT (to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM')) AS BLAH, " \
+        query = "SELECT '{}' AS ESN, AC, (to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM')) AS BLAH, " \
                 "SUM( ROUND( odb.AC_ACTUAL_FLIGHTS.FLIGHT_HOURS + " \
                 "( odb.AC_ACTUAL_FLIGHTS.FLIGHT_MINUTES / 60 ), 5 ) ) AS FLIGHT_HOURS, " \
                 "SUM ( odb.AC_ACTUAL_FLIGHTS.CYCLES ) AS FLIGHT_CYCLES " \
                 "FROM odb.AC_ACTUAL_FLIGHTS " \
                 "WHERE ( ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE + " \
-                    "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_HOUR, 0) / 24 ) + " \
-                    "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_MINUTE, 0) / 1440 )) >= to_date('{}', 'YYYY-MM-DD HH24:MI:SS')) " \
+                "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_HOUR, 0) / 24 ) + " \
+                "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_MINUTE, 0) / 1440 )) >= to_date('{}', 'YYYY-MM-DD HH24:MI:SS')) " \
                 "AND ( ( odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE + " \
-                    "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_HOUR, 0) / 24 ) + " \
-                    "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_MINUTE, 0) / 1440 )) <= to_date('{}', 'YYYY-MM-DD HH24:MI:SS')) " \
+                "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_HOUR, 0) / 24 ) + " \
+                "( NVL( odb.AC_ACTUAL_FLIGHTS.TO_MINUTE, 0) / 1440 )) <= to_date('{}', 'YYYY-MM-DD HH24:MI:SS')) " \
                 "AND ( odb.AC_ACTUAL_FLIGHTS.AC = '{}' ) " \
-                "GROUP BY to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM') " \
-                "ORDER BY BLAH".format(startdate, enddate, ac)
+                "GROUP BY to_char(odb.AC_ACTUAL_FLIGHTS.FLIGHT_DATE, 'YYYY-MM'), AC"
 
-        df = pd.read_sql(query, self.trax)
-        if df.empty:
-            query = query.replace("AC_ACTUAL_FLIGHTS", "AC_ACTUAL_FLIGHTS_HD")
-            df = pd.read_sql(query, self.trax)
-        else:
-            pass
+        query_out = ""
+
+        for i, row in df.iterrows():
+            esn = row['ESN']
+            startdate = row['INSTALL_DATE']
+            enddate = row['REMOVAL_DATE']
+            ac = row['AC']
+            query_tmp = query.format(esn, startdate, enddate, ac)
+
+            if ac == 'N631VA' or ac == 'N634VA':    # Aircraft removed from Op Spec
+                query_tmp = query_tmp.replace("AC_ACTUAL_FLIGHTS", "AC_ACTUAL_FLIGHTS_HD")
+
+            if i == (len(df) - 1):
+                query_out += query_tmp
+                break
+            else:
+                query_out += query_tmp + " UNION "
+
+        df = pd.read_sql(query_out, self.trax)
+
+        # if df.empty:
+        #     query_out = query_out.replace("AC_ACTUAL_FLIGHTS", "AC_ACTUAL_FLIGHTS_HD")
+        #     df = pd.read_sql(query_out, self.trax)
+        # else:
+        #     pass
 
         df.rename(columns={'BLAH': 'YYYY-MM'}, inplace=True)
-        self.esn_history.update(df)
-        return df
+
+        return pd.pivot_table(df, index=['ESN'], columns=['YYYY-MM'], fill_value=0, aggfunc=np.sum, margins=True)
 
     def run(self):
         print("Collecting Engine Data...")
-        pairs = self._get_install_removal_pairs()
-
-        return self._build_dataframe(pairs)
-
-    def _build_dataframe(self, pairs):
-        """
-        Needs revision.  This method calls on 'get_install_time_by_yyyy_mm()' for each install-removal pair and merges
-        unique records based on ESN. This is time-consuming (~50s) and should be written as an array function (df.apply)
-        :return: dataframe with flight hours and cycles for each ESN in the fleet's history, filtered to YYYY-MM with totals
-        """
-        pbar = tqdm(total=len(pairs))
+        pbar = tqdm(total=100)
         pbar.bar_format = "{l_bar}%s{bar}%s{r_bar}" % (Fore.GREEN, Fore.RESET)
-
-        df_result = pd.DataFrame(columns=['ESN', 'INSTALLED_AC', 'YYYY-MM', 'FLIGHT_HOURS', 'FLIGHT_CYCLES'])
-
-        for i, esn in pairs.iterrows():
-            df_tmp = self.get_install_time_by_yyyy_mm(esn['INSTALL_DATE'], esn['REMOVAL_DATE'], esn['AC'])
-            df_tmp['ESN'] = esn['ESN']
-
-            if str(esn['REMOVAL_DATE']) == self.endDate:
-                df_tmp['INSTALLED_AC'] = esn['AC']
-            else:
-                df_tmp['INSTALLED_AC'] = 'SPARE'
-
-            df_result = df_result.append(df_tmp, ignore_index=True)
-            pbar.update(1)
-
-        pbar.close()
-
-        piv = self.filter_to_yyyy_mm(
-            pd.pivot_table(df_result, index=['ESN'], columns=['YYYY-MM'], fill_value=0, aggfunc=np.sum, margins=True))
-        installed_ac = df_result.loc[df_result['YYYY-MM'] == self.yyyymm]
-        installed_ac = installed_ac[['ESN', 'INSTALLED_AC']]
-        installed_ac.set_index('ESN', inplace=True)
-
-        df_out = piv.merge(installed_ac, how='outer', left_index=True, right_index=True)
-
-        return df_out.sort_values(by='INSTALLED_AC')
-
-    def run_apply(self):
-        """
-        Under development.  Uses array formula (pd.apply) instead of for loop for each ESN.
-        :return:
-        """
-        esns = self._get_install_removal_pairs()
-
-        self.esn_history = pd.concat([esns, self.esn_history], axis=1).fillna(0)
-        # df2[['TSI', 'CSI']] = df2.apply(
-        #     lambda row: pd.Series(e.get_tsi_csi(str(row['INSTALL_DATE']), str(row['REMOVAL_DATE']), row['AC'])), axis=1)
-
-        self.esn_history.apply(lambda row: pd.Series(self.get_install_time_by_yyyy_mm(row[2], row[4], row[1])), axis=1)
-
-        return self.esn_history
+        pairs = self._get_install_removal_pairs()
+        pbar.update(10)
+        esn_history = self.get_esn_history(pairs)
+        pbar.update(75)
+        df = self.filter_to_yyyy_mm(esn_history)
+        pbar.update(10)
+        df = df.merge(self.installed_ac(), on='ESN', how='outer')
+        pbar.update(5)
+        return df
 
     def get_tsi_csi(self, startdate, enddate, ac):
         query = "SELECT SUM ( " \
@@ -190,3 +164,19 @@ class Engine(Airframe):
         df = pd.read_sql(query, self.trax)
         # print(pd.Series(df['TSI'][0], int(df['CSI'][0])))
         return df['TSI'][0], int(df['CSI'][0])
+
+    def installed_ac(self):
+        query = "SELECT SN, INSTALLED_AC " \
+                "FROM odb.PN_INVENTORY_DETAIL WHERE PN LIKE '1887M10G%' OR PN LIKE '2489M10G%'"
+
+        df = pd.read_sql(query, self.trax)
+        df.rename(columns={'SN': 'ESN'}, inplace=True)
+        df.set_index('ESN', inplace=True)
+
+        return df
+
+
+if __name__ == "__main__":
+    start_date, end_date = '2020-04-01 00:00:00', '2020-04-30 23:59:59'
+    e = Engine(start_date, end_date)
+    df = e.run()
