@@ -17,7 +17,7 @@ class Airframe(object):
         self.yyyymm = self.year + "-" + self.month
         self.now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        self.trax = pyodbc.connect('DSN=Trax Reporting;pwd=WelcomeToTrax#1')
+        self.trax = pyodbc.connect('DSN=Trax Reporting;pwd={}')
         self.tails = self.get_tails()
 
     def get_fh_fc_history(self):
